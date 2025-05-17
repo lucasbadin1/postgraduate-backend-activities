@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Testar API de Produtos</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 20px auto;
+      }
+      label {
+        display: block;
+        margin-top: 10px;
+      }
+      input,
+      button {
+        padding: 8px;
+        margin-top: 5px;
+        width: 100%;
+      }
+      button {
+        cursor: pointer;
+      }
+      .log {
+        margin-top: 20px;
+        background: #eee;
+        padding: 10px;
+        white-space: pre-wrap;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Testar API de Produtos</h1>
+
+    <h2>Criar Produto</h2>
+    <form id="createForm">
+      <label
+        >Nome:
+        <input type="text" id="name" required />
+      </label>
+      <label
+        >Descrição:
+        <input type="text" id="description" required />
+      </label>
+      <label
+        >Preço:
+        <input type="number" step="0.01" id="price" required />
+      </label>
+      <label
+        >Categoria:
+        <input type="text" id="category" required />
+      </label>
+      <label
+        >URL da Imagem:
+        <input type="url" id="pictureUrl" required />
+      </label>
+      <button type="submit">Criar Produto</button>
+    </form>
+
+    <h2>Deletar Produto</h2>
+    <form id="deleteForm">
+      <label
+        >ID do Produto:
+        <input type="number" id="deleteId" required />
+      </label>
+      <button type="submit">Deletar Produto</button>
+    </form>
+
+    <!-- Novo: Atualizar Produto -->
+    <h2>Atualizar Produto</h2>
+    <form id="updateProductForm">
+      <label
+        >ID do Produto:
+        <input type="text" id="updateId" required />
+      </label>
+      <label
+        >Nome:
+        <input type="text" id="updateName" />
+      </label>
+      <label
+        >Preço:
+        <input type="number" step="0.01" id="updatePrice" />
+      </label>
+      <label
+        >Descrição:
+        <input type="text" id="updateDescription" />
+      </label>
+      <label
+        >Categoria:
+        <input type="text" id="updateCategory" />
+      </label>
+      <label
+        >URL da Imagem:
+        <input type="url" id="updatePictureUrl" />
+      </label>
+      <button type="submit">Atualizar Produto</button>
+    </form>
+
+    <!-- Novo: Atualizar Imagem do Produto -->
+    <h2>Atualizar Imagem do Produto</h2>
+    <form id="updateImageForm">
+      <label
+        >ID do Produto:
+        <input type="number" id="updateImageId" required />
+      </label>
+      <label
+        >URL da Imagem:
+        <input type="url" id="updateImageUrl" required />
+      </label>
+      <button type="submit">Atualizar Imagem</button>
+    </form>
+
+    <div class="log" id="log"></div>
+
+    <script>
+      const baseURL = "http://localhost:3333/products"; // ajuste se precisar
+      const logEl = document.getElementById("log");
+
+      function log(message) {
+        logEl.textContent += message + "\n\n";
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      // Criar produto
+      document
+        .getElementById("createForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const name = document.getElementById("name").value;
+          const description = document.getElementById("description").value;
+          const price = parseFloat(document.getElementById("price").value);
+          const category = document.getElementById("category").value;
+          const pictureUrl = document.getElementById("pictureUrl").value;
+
+          const product = { name, description, price, category, pictureUrl };
+
+          try {
+            const res = await fetch(baseURL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(product),
+            });
+            if (!res.ok) throw new Error(`Erro ${res.status}`);
+            const data = await res.json();
+            log("Produto criado:\n" + JSON.stringify(data, null, 2));
+            e.target.reset();
+          } catch (err) {
+            log("Erro ao criar produto: " + err.message);
+          }
+        });
+
+      // Deletar produto
+      document
+        .getElementById("deleteForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const id = document.getElementById("deleteId").value;
+
+          try {
+            const res = await fetch(`${baseURL}/${id}`, { method: "DELETE" });
+            if (!res.ok) throw new Error(`Erro ${res.status}`);
+            const data = await res.json();
+            log("Produto deletado:\n" + JSON.stringify(data, null, 2));
+            e.target.reset();
+          } catch (err) {
+            log("Erro ao deletar produto: " + err.message);
+          }
+        });
+
+      // Atualizar produto (PUT /products/:id)
+      document
+        .getElementById("updateProductForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const id = document.getElementById("updateId").value.trim();
+          const name = document.getElementById("updateName").value.trim();
+          const priceVal = document.getElementById("updatePrice").value;
+          const description = document
+            .getElementById("updateDescription")
+            .value.trim();
+          const category = document
+            .getElementById("updateCategory")
+            .value.trim();
+          const pictureUrl = document
+            .getElementById("updatePictureUrl")
+            .value.trim();
+
+          const body = {};
+          if (name) body.name = name;
+          if (priceVal) body.price = Number(priceVal);
+          if (description) body.description = description;
+          if (category) body.category = category;
+          if (pictureUrl) body.pictureUrl = pictureUrl;
+
+          if (Object.keys(body).length === 0) {
+            alert("Informe pelo menos um campo para atualizar.");
+            return;
+          }
+
+          try {
+            const res = await fetch(`${baseURL}/${id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
+            if (!res.ok) throw new Error(`Erro ${res.status}`);
+            const data = await res.json();
+            log("Produto atualizado:\n" + JSON.stringify(data, null, 2));
+            e.target.reset();
+          } catch (err) {
+            log("Erro ao atualizar produto: " + err.message);
+          }
+        });
+
+      // Atualizar imagem do produto (PUT /products/:id/image)
+      document
+        .getElementById("updateImageForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const id = document.getElementById("updateImageId").value;
+          const image = document.getElementById("updateImageUrl").value.trim();
+
+          try {
+            const res = await fetch(`${baseURL}/${id}/image`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ image }),
+            });
+            if (!res.ok) throw new Error(`Erro ${res.status}`);
+            const data = await res.json();
+            log("Imagem atualizada:\n" + JSON.stringify(data, null, 2));
+            e.target.reset();
+          } catch (err) {
+            log("Erro ao atualizar imagem: " + err.message);
+          }
+        });
+    </script>
+  </body>
+</html>
